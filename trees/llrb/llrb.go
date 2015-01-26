@@ -1,6 +1,17 @@
 // Left-leaning Red-black Tree http://www.cs.princeton.edu/~rs/talks/LLRB/LLRB.pdf
 // Based on 2-3 Trees.
-// TODO: implement delete
+//
+// 3-nodes are represented as a node with a left Red child.
+// 3-nodes are left-leaning.
+//
+// 4-nodes are represented as a node with two Red children.
+//
+//
+// Disallowed:
+//  1. right-leaning 3-node representation
+//  2. two reds in a row
+//
+//
 package llrb
 
 // Color specifies the color of a node.
@@ -11,7 +22,7 @@ const (
 	Black Color = true
 )
 
-// Key represents a key in in a LLRB tree. A Key
+// Key represents a key in in a LLRB Tree. A Key
 // must be comparable
 type Key interface {
 	// Less returns true if a < b
@@ -21,7 +32,7 @@ type Key interface {
 	Equal(a, b Key) bool
 }
 
-// Node represents a node in the LLRB.
+// Node represents a node in the LLRB Tree.
 type Node struct {
 	Key   int
 	Value interface{}
@@ -30,6 +41,7 @@ type Node struct {
 	left, right *Node
 }
 
+// Tree represents a 2-3 LLRB Tree.
 type Tree struct {
 	root *Node
 }
@@ -41,20 +53,24 @@ func New() *Tree {
 	}
 }
 
-func (t *Tree) Search(key int) interface{} {
+// Search searches for a Node is the Tree based on a key. If the node is
+// found (Node.Value, true) is returned, otherwise (nil, false).
+func (t *Tree) Search(key int) (interface{}, bool) {
 	n := t.root
 	for n != nil {
 		if key == n.Key {
-			return n.Value
+			return n.Value, true
 		} else if key < n.Key {
 			n = n.left
 		} else {
 			n = n.right
 		}
 	}
-	return nil
+	return nil, false
 }
 
+// Height returns the height of the Tree. The height is the number
+// of levels before the bottom most node is found.
 func (t *Tree) Height() int {
 	return height(t.root) + 1
 }
@@ -73,11 +89,16 @@ func height(n *Node) int {
 	return rightHeight + 1
 }
 
+// Insert inserts a new node into the Tree based on key and value.
+// This operations runs in O(log n)
 func (t *Tree) Insert(key int, value interface{}) {
 	t.root = insert(t.root, key, value)
 	t.root.Color = Black
 }
 
+// insert inserts a node into the Tree as it would in a regular BST.
+// After the insertion has been completed if an invariant has been violated
+// it will be fixed, maintaining O(log n) height.
 func insert(n *Node, key int, value interface{}) *Node {
 	if n == nil {
 		return &Node{
@@ -87,6 +108,8 @@ func insert(n *Node, key int, value interface{}) *Node {
 		}
 	}
 
+	// If colors are flipped here this turns into a 2-3-4 Tree.
+
 	if key == n.Key {
 		n.Value = value
 	} else if key < n.Key {
@@ -95,21 +118,12 @@ func insert(n *Node, key int, value interface{}) *Node {
 		n.right = insert(n.right, key, value)
 	}
 
-	if isRed(n.right) && !isRed(n.left) {
-		n = rotateLeft(n)
-	}
-
-	if isRed(n.left) && isRed(n.left.left) {
-		n = rotateRight(n)
-	}
-
-	if isRed(n.left) && isRed(n.right) {
-		colorFlip(n)
-	}
+	n = fixUp(n)
 
 	return n
 }
 
+// DeleteMin deletes the minimum element of the Tree
 func (t *Tree) DeleteMin() {
 	t.root = deleteMin(t.root)
 	t.root.Color = Black
@@ -129,6 +143,7 @@ func deleteMin(n *Node) *Node {
 	return fixUp(n)
 }
 
+// isRed returns true if n.Color == Red, false otherwise.
 func isRed(n *Node) bool {
 	if n == nil {
 		return false
@@ -136,6 +151,7 @@ func isRed(n *Node) bool {
 	return n.Color == Red
 }
 
+// colorFlip flips the Color of n and its direct children.
 func colorFlip(n *Node) {
 	n.Color = !n.Color
 	n.left.Color = !n.left.Color
@@ -180,15 +196,19 @@ func moveRedRight(n *Node) *Node {
 	return n
 }
 
+// fixUp fixes any violated invariants on Node n.
 func fixUp(n *Node) *Node {
+	// Disallowed right-leaning.
 	if isRed(n.right) && !isRed(n.left) {
 		n = rotateLeft(n)
 	}
 
+	// Disallowed two reds in a row.
 	if isRed(n.left) && isRed(n.left.left) {
 		n = rotateRight(n)
 	}
 
+	// Change if 4-node.
 	if isRed(n.left) && isRed(n.right) {
 		colorFlip(n)
 	}
