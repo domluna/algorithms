@@ -72,6 +72,19 @@ func get(n *Node, key int) interface{} {
 	return nil
 }
 
+// Len returns the number of Nodes in the Tree.
+func (t *Tree) Len() int {
+	return len(t.root)
+
+}
+
+func len(n *Node) int {
+	if n == nil {
+		return 0
+	}
+	return len(n.left) + len(n.right) + 1
+}
+
 // Height returns the height of the Tree. The height is the number
 // of levels before the bottom most node is found.
 func (t *Tree) Height() int {
