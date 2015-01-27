@@ -22,7 +22,7 @@ func TestHeight(t *testing.T) {
 	}
 }
 
-func TestSearch(t *testing.T) {
+func TestGet(t *testing.T) {
 	tree := llrb.New()
 	nNodes := 1 << 16
 	keys := rand.Perm(nNodes)
@@ -32,8 +32,8 @@ func TestSearch(t *testing.T) {
 	}
 
 	for _, k := range keys {
-		if _, ok := tree.Search(k); !ok {
-			t.Errorf("Search %v, got %v, want %v", k, ok, true)
+		if v := tree.Get(k); v == nil {
+			t.Errorf("Get %v, got %v, want %v", k, nil, k)
 		}
 	}
 }

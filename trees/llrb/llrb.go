@@ -1,4 +1,6 @@
-// Left-leaning Red-black Tree http://www.cs.princeton.edu/~rs/talks/LLRB/LLRB.pdf
+// Left-leaning Red-black Tree
+// http://www.cs.princeton.edu/~rs/talks/LLRB/LLRB.pdf
+// http://www.cs.princeton.edu/~rs/talks/LLRB/RedBlack.pdf
 // Based on 2-3 Trees.
 //
 // 3-nodes are represented as a node with a left Red child.
@@ -6,11 +8,9 @@
 //
 // 4-nodes are represented as a node with two Red children.
 //
-//
-// Disallowed:
+// Disallowed (invariants):
 //  1. right-leaning 3-node representation
 //  2. two reds in a row
-//
 //
 package llrb
 
@@ -53,20 +53,23 @@ func New() *Tree {
 	}
 }
 
-// Search searches for a Node is the Tree based on a key. If the node is
-// found (Node.Value, true) is returned, otherwise (nil, false).
-func (t *Tree) Search(key int) (interface{}, bool) {
-	n := t.root
+// Get searches for a Node is the Tree based on a key. If the node is
+// found Node.Value is returned, otherwise nil.
+func (t *Tree) Get(key int) interface{} {
+	return get(t.root, key)
+}
+
+func get(n *Node, key int) interface{} {
 	for n != nil {
 		if key == n.Key {
-			return n.Value, true
+			return n.Value
 		} else if key < n.Key {
 			n = n.left
 		} else {
 			n = n.right
 		}
 	}
-	return nil, false
+	return nil
 }
 
 // Height returns the height of the Tree. The height is the number
@@ -123,10 +126,62 @@ func insert(n *Node, key int, value interface{}) *Node {
 	return n
 }
 
+// Delete deletes the node with the given key from the Tree.
+func (t *Tree) Delete(key int) {
+	delete(t.root, key)
+}
+
+func delete(n *Node, key int) *Node {
+	if key < n.Key {
+		if !isRed(n.left) && !isRed(n.left.left) {
+			n = moveRedLeft(n)
+			n.left = delete(n.left, key)
+		}
+	} else {
+
+		if isRed(n.left) {
+			// n = leanRight(n)
+		}
+
+		if key == n.Key && n.right == nil {
+			return nil
+		}
+
+		if !isRed(n.right) && !isRed(n.right.left) {
+			n = moveRedRight(n)
+		}
+
+		if key == n.Key {
+			n.Key = min(n.right).Key
+			n.Value = get(n.right, n.Key)
+			n.right = deleteMin(n.right)
+		} else {
+			n.right = delete(n.right, key)
+		}
+
+	}
+
+	return fixUp(n)
+}
+
 // DeleteMin deletes the minimum element of the Tree
 func (t *Tree) DeleteMin() {
 	t.root = deleteMin(t.root)
 	t.root.Color = Black
+}
+
+func min(n *Node) *Node {
+	if n.left == nil {
+		return n
+	}
+	return min(n.left)
+}
+
+func max(n *Node) *Node {
+	if n.right == nil {
+		return n
+	}
+	return max(n.right)
 }
 
 func deleteMin(n *Node) *Node {
@@ -139,6 +194,30 @@ func deleteMin(n *Node) *Node {
 	}
 
 	n.left = deleteMin(n.left)
+
+	return fixUp(n)
+}
+
+// DeleteMax deletes the minimum element of the Tree
+func (t *Tree) DeleteMax() {
+	t.root = deleteMax(t.root)
+	t.root.Color = Black
+}
+
+func deleteMax(n *Node) *Node {
+	if isRed(n.left) {
+		n = rotateRight(n)
+	}
+
+	if n.right == nil {
+		return nil
+	}
+
+	if !isRed(n.right) && !isRed(n.right.left) {
+		n = moveRedRight(n)
+	}
+
+	n.left = deleteMax(n.left)
 
 	return fixUp(n)
 }
