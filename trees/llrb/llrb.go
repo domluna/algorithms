@@ -22,20 +22,16 @@ const (
 	Black Color = true
 )
 
-// Key represents a key in in a LLRB Tree. A Key
-// must be comparable
 type Key interface {
-	// Less returns true if a < b
-	Less(a, b Key) bool
-
-	// Equal returns true if a == b
-	Equal(a, b Key) bool
+	Less(a interface{}) bool
 }
+
+type Value interface{}
 
 // Node represents a node in the LLRB Tree.
 type Node struct {
-	Key   int
-	Value interface{}
+	Key
+	Value
 	Color
 
 	left, right *Node
@@ -55,15 +51,15 @@ func New() *Tree {
 
 // Get searches for a Node is the Tree based on a key. If the node is
 // found Node.Value is returned, otherwise nil.
-func (t *Tree) Get(key int) interface{} {
-	return get(t.root, key)
+func (t *Tree) Get(k Key) interface{} {
+	return get(t.root, k)
 }
 
-func get(n *Node, key int) interface{} {
+func get(n *Node, k Key) interface{} {
 	for n != nil {
-		if key == n.Key {
+		if k == n.Key {
 			return n.Value
-		} else if key < n.Key {
+		} else if k.Less(n.Key) {
 			n = n.left
 		} else {
 			n = n.right
@@ -107,31 +103,33 @@ func height(n *Node) int {
 
 // Insert inserts a new node into the Tree based on key and value.
 // This operations runs in O(log n)
-func (t *Tree) Insert(key int, value interface{}) {
-	t.root = insert(t.root, key, value)
-	t.root.Color = Black
+func (t *Tree) Insert(k Key, v Value) {
+	t.root = insert(t.root, k, v)
+	if t.root != nil {
+		t.root.Color = Black
+	}
 }
 
 // insert inserts a node into the Tree as it would in a regular BST.
 // After the insertion has been completed if an invariant has been violated
 // it will be fixed, maintaining O(log n) height.
-func insert(n *Node, key int, value interface{}) *Node {
+func insert(n *Node, k Key, v Value) *Node {
 	if n == nil {
 		return &Node{
-			Key:   key,
-			Value: value,
+			Key:   k,
+			Value: v,
 			Color: Red,
 		}
 	}
 
 	// If colors are flipped here this turns into a 2-3-4 Tree.
 
-	if key == n.Key {
-		n.Value = value
-	} else if key < n.Key {
-		n.left = insert(n.left, key, value)
+	if k == n.Key {
+		n.Value = v
+	} else if k.Less(n.Key) {
+		n.left = insert(n.left, k, v)
 	} else {
-		n.right = insert(n.right, key, value)
+		n.right = insert(n.right, k, v)
 	}
 
 	n = fixUp(n)
@@ -140,23 +138,29 @@ func insert(n *Node, key int, value interface{}) *Node {
 }
 
 // Delete deletes the node with the given key from the Tree.
-func (t *Tree) Delete(key int) {
-	delete(t.root, key)
+func (t *Tree) Delete(k Key) {
+	t.root = delete(t.root, k)
+	if t.root != nil {
+		t.root.Color = Black
+	}
 }
 
-func delete(n *Node, key int) *Node {
-	if key < n.Key {
+func delete(n *Node, k Key) *Node {
+	if n == nil {
+		return nil
+	}
+
+	if k.Less(n.Key) {
 		if !isRed(n.left) && !isRed(n.left.left) {
 			n = moveRedLeft(n)
-			n.left = delete(n.left, key)
 		}
+		n.left = delete(n.left, k)
 	} else {
-
 		if isRed(n.left) {
-			// n = leanRight(n)
+			n = rotateRight(n)
 		}
 
-		if key == n.Key && n.right == nil {
+		if k == n.Key && n.right == nil {
 			return nil
 		}
 
@@ -164,12 +168,15 @@ func delete(n *Node, key int) *Node {
 			n = moveRedRight(n)
 		}
 
-		if key == n.Key {
-			n.Key = min(n.right).Key
-			n.Value = get(n.right, n.Key)
+		// Found node switch K/V with min node of right child.
+		// Delete min node of the right child.
+		if k == n.Key {
+			mk, mv := min(n.right)
+			n.Key = mk
+			n.Value = mv
 			n.right = deleteMin(n.right)
 		} else {
-			n.right = delete(n.right, key)
+			n.right = delete(n.right, k)
 		}
 
 	}
@@ -177,27 +184,57 @@ func delete(n *Node, key int) *Node {
 	return fixUp(n)
 }
 
+// for delete routine
+func min(n *Node) (Key, Value) {
+	if n == nil {
+		return nil, nil
+	}
+	for n.left != nil {
+		n = n.left
+	}
+
+	return n.Key, n.Value
+}
+
 // DeleteMin deletes the minimum element of the Tree
 func (t *Tree) DeleteMin() {
 	t.root = deleteMin(t.root)
-	t.root.Color = Black
+	if t.root != nil {
+		t.root.Color = Black
+	}
 }
 
-func min(n *Node) *Node {
-	if n.left == nil {
-		return n
+func (t *Tree) Min() Key {
+	n := t.root
+	if n == nil {
+		return nil
 	}
-	return min(n.left)
+
+	for n.left != nil {
+		n = n.left
+	}
+
+	return n.Key
 }
 
-func max(n *Node) *Node {
-	if n.right == nil {
-		return n
+func (t *Tree) Max() Key {
+	n := t.root
+	if n == nil {
+		return nil
 	}
-	return max(n.right)
+
+	for n.right != nil {
+		n = n.right
+	}
+
+	return n.Key
 }
 
 func deleteMin(n *Node) *Node {
+	if n == nil {
+		return nil
+	}
+
 	if n.left == nil {
 		return nil
 	}
@@ -214,10 +251,16 @@ func deleteMin(n *Node) *Node {
 // DeleteMax deletes the minimum element of the Tree
 func (t *Tree) DeleteMax() {
 	t.root = deleteMax(t.root)
-	t.root.Color = Black
+	if t.root != nil {
+		t.root.Color = Black
+	}
 }
 
 func deleteMax(n *Node) *Node {
+	if n == nil {
+		return nil
+	}
+
 	if isRed(n.left) {
 		n = rotateRight(n)
 	}
@@ -230,25 +273,9 @@ func deleteMax(n *Node) *Node {
 		n = moveRedRight(n)
 	}
 
-	n.left = deleteMax(n.left)
+	n.right = deleteMax(n.right)
 
 	return fixUp(n)
-}
-
-// isRed returns true if n.Color == Red, false otherwise.
-func isRed(n *Node) bool {
-	if n == nil {
-		return false
-	}
-	return n.Color == Red
-}
-
-// colorFlip flips the Color of n and its direct children.
-func colorFlip(n *Node) {
-	n.Color = !n.Color
-	n.left.Color = !n.left.Color
-	n.right.Color = !n.right.Color
-
 }
 
 func rotateRight(n *Node) *Node {
@@ -286,6 +313,22 @@ func moveRedRight(n *Node) *Node {
 		colorFlip(n)
 	}
 	return n
+}
+
+// isRed returns true if n.Color == Red, false otherwise.
+func isRed(n *Node) bool {
+	if n == nil {
+		return false
+	}
+	return n.Color == Red
+}
+
+// colorFlip flips the Color of n and its direct children.
+func colorFlip(n *Node) {
+	n.Color = !n.Color
+	n.left.Color = !n.left.Color
+	n.right.Color = !n.right.Color
+
 }
 
 // fixUp fixes any violated invariants on Node n.
