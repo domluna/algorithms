@@ -128,4 +128,6 @@ func TestDelete(t *testing.T) {
 		t.Errorf("Len: got %d, want %d", l, 0)
 	}
 
+	// Delete again for good measure
+	tree.Delete(IntKey(10))
 }

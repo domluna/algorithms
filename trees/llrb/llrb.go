@@ -9,8 +9,11 @@
 // 4-nodes are represented as a node with two Red children.
 //
 // Disallowed (invariants):
-//  1. right-leaning 3-node representation
-//  2. two reds in a row
+//  1. Right-leaning 3-node representation
+//  2. Two reds in a row
+//
+// Current operations:
+//  Max, Min, DeleteMin, DeleteMax, Get, Insert, Delete
 //
 package llrb
 
@@ -22,10 +25,13 @@ const (
 	Black Color = true
 )
 
+// Key of a Node.
 type Key interface {
+	// Less returns true is a < the receiver element.
 	Less(a interface{}) bool
 }
 
+// Value of a Node.
 type Value interface{}
 
 // Node represents a node in the LLRB Tree.
@@ -51,7 +57,7 @@ func New() *Tree {
 
 // Get searches for a Node is the Tree based on a key. If the node is
 // found Node.Value is returned, otherwise nil.
-func (t *Tree) Get(k Key) interface{} {
+func (t *Tree) Get(k Key) Value {
 	return get(t.root, k)
 }
 
@@ -101,8 +107,8 @@ func height(n *Node) int {
 	return rightHeight + 1
 }
 
-// Insert inserts a new node into the Tree based on key and value.
-// This operations runs in O(log n)
+// Insert inserts a new node with Key = k and Value = v.
+// If k already exists, the current value with be replace with v.
 func (t *Tree) Insert(k Key, v Value) {
 	t.root = insert(t.root, k, v)
 	if t.root != nil {
@@ -137,7 +143,7 @@ func insert(n *Node, k Key, v Value) *Node {
 	return n
 }
 
-// Delete deletes the node with the given key from the Tree.
+// Delete deletes the node where the Key == k.
 func (t *Tree) Delete(k Key) {
 	t.root = delete(t.root, k)
 	if t.root != nil {
@@ -196,7 +202,7 @@ func min(n *Node) (Key, Value) {
 	return n.Key, n.Value
 }
 
-// DeleteMin deletes the minimum element of the Tree
+// DeleteMin deletes the minimum element of the Tree.
 func (t *Tree) DeleteMin() {
 	t.root = deleteMin(t.root)
 	if t.root != nil {
@@ -204,6 +210,7 @@ func (t *Tree) DeleteMin() {
 	}
 }
 
+// Min returns the minimum Key.
 func (t *Tree) Min() Key {
 	n := t.root
 	if n == nil {
@@ -217,6 +224,7 @@ func (t *Tree) Min() Key {
 	return n.Key
 }
 
+// Max returns the maximum Key.
 func (t *Tree) Max() Key {
 	n := t.root
 	if n == nil {
