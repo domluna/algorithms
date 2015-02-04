@@ -57,8 +57,11 @@ func compute(s string, length int, table map[int][]string) []string {
 	}
 
 	newPerms := make([]string, 0)
+	char := string(s[length])
+
+	// For each permutation add on current char
+	// to every position of the permutation.
 	for _, p := range perms {
-		char := string(s[length])
 		for i := range p {
 			newPerms = append(newPerms, p[:i]+char+p[i:])
 		}
