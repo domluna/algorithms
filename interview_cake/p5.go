@@ -1,4 +1,4 @@
-// Coin
+// Making Change
 //
 // Given an amount of money and
 // a list of coin denominations,
