@@ -31,7 +31,8 @@ var K int
 // the sorted array.
 //
 // Time is dominated by sorting.
-// Can we do O(n)?
+// Numbers are 10 digits at most so radix sorting would give us
+// close to linear.
 func maxMin(a []int64) int64 {
 
 	is := Int64Slice(a)
@@ -44,30 +45,12 @@ func scanK(a []int64) int64 {
 	var unfairness int64
 	unfairness = (1 << 63) - 1
 	for i := 0; i < len(a)-K+1; i++ {
-		slice := a[i : i+K]
-		max, min := bounds(slice)
+		min, max := a[i], a[i+K-1]
 		if max-min < unfairness {
 			unfairness = max - min
 		}
 	}
 	return unfairness
-}
-
-// bounds returns the max and min values
-func bounds(a []int64) (max, min int64) {
-	max = 0
-	min = (1 << 63) - 1
-
-	for _, v := range a {
-		if v > max {
-			max = v
-		}
-
-		if v < min {
-			min = v
-		}
-	}
-	return
 }
 
 func read() {
