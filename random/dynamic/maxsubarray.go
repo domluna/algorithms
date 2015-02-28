@@ -1,6 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strconv"
+)
 
 type Result struct {
 	c, nc int
@@ -9,10 +14,19 @@ type Result struct {
 // find the max subarray non-contiguous
 func maxSubNC(a []int) int {
 	s := 0
+	max := -100000
 	for _, v := range a {
 		if v > 0 {
 			s += v
 		}
+
+		if v > max {
+			max = v
+		}
+	}
+
+	if s == 0 {
+		return max
 	}
 	return s
 }
@@ -22,6 +36,7 @@ func maxSubNC(a []int) int {
 func maxSubC(a []int) int {
 	c := 0
 	sum := 0
+	max := -100000
 
 	for _, v := range a {
 		val := c + v
@@ -35,6 +50,14 @@ func maxSubC(a []int) int {
 		if c > sum {
 			sum = c
 		}
+
+		if v > max {
+			max = v
+		}
+	}
+
+	if sum == 0 {
+		return max
 	}
 
 	return sum
@@ -65,24 +88,40 @@ var tests = []struct {
 		11,
 		16,
 	},
+	{
+		[]int{-10, -3, -2, -1},
+		-1,
+		-1,
+	},
 }
 
 func readIn() {
 	var T int
-	var N int
-	var ai int
 	var a []int
 
 	results := make([]Result, 0)
 
 	fmt.Scanf("%d", &T)
 
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Split(bufio.ScanWords)
+
 	for i := 0; i < T; i++ {
-		fmt.Scanf("%d", &N)
+		scanner.Scan()
+		N, err := strconv.Atoi(scanner.Text())
+		if err != nil {
+			panic(err)
+		}
+
 		a = make([]int, 0)
-		for j := 0; j < N; j++ {
-			fmt.Scanf("%d", &ai)
-			a = append(a, ai)
+
+		for n := 0; n < N; n++ {
+			scanner.Scan()
+			x, err := strconv.Atoi(scanner.Text())
+			if err != nil {
+				panic(err)
+			}
+			a = append(a, x)
 		}
 		results = append(results, Result{maxSubC(a), maxSubNC(a)})
 	}
@@ -99,14 +138,15 @@ func runTests() {
 		gotNC := maxSubNC(t.a)
 		fmt.Printf("Test %d\n", i)
 		if gotC != t.wantC {
-			fmt.Printf("\tERROR: got %v, want %v\n", gotC, t.wantC)
+			fmt.Printf("\tERROR A: got %v, want %v\n", gotC, t.wantC)
 		}
 		if gotNC != t.wantNC {
-			fmt.Printf("\tERROR: got %v, want %v\n", gotNC, t.wantNC)
+			fmt.Printf("\tERROR B: got %v, want %v\n", gotNC, t.wantNC)
 		}
 	}
 }
 
 func main() {
+	// runTests()
 	readIn()
 }
